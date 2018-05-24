@@ -26,7 +26,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import javax.ws.rs.Produces;
 
+@Produces(MediaType.TEXT_PLAIN)
 public class TestMessageBodyReader implements MessageBodyReader<String> {
 
     public static final String REPLACED_BODY = "this is the replaced body";

@@ -97,7 +97,7 @@ public class CDIInvokeWithRegisteredProvidersTest extends WiremockArquillianTest
         assertEquals(TestWriterInterceptor.getAndResetValue(),1);
     }
 
-    //@Test
+    @Test
     public void testInvokesPutOperation() throws Exception {
         String inputBody = "input body will be removed";
         String outputBody = "output body will be removed";

@@ -81,7 +81,7 @@ public class InvokeWithRegisteredProvidersTest extends WiremockArquillianTest {
         assertEquals(TestWriterInterceptor.getAndResetValue(),1);
     }
 
-    //@Test
+    @Test
     public void testInvokesPutOperationWithAnnotatedProviders() throws Exception {
         String inputBody = "input body will be removed";
         String outputBody = "output body will be removed";
