@@ -26,7 +26,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import javax.ws.rs.Produces;
 
+@Produces(MediaType.TEXT_PLAIN)
 public class TestMessageBodyWriter implements MessageBodyWriter<String> {
     @Override
     public boolean isWriteable(Class<?> aClass, Type type, Annotation[] annotations, MediaType mediaType) {

@@ -27,7 +27,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.util.Map;
@@ -214,7 +213,6 @@ public class AsyncMethodTest extends WiremockArquillianTest{
 
         Response response = future.toCompletableFuture().get();
         assertEquals(response.getStatus(), 200);
-        assertTrue(response.getLocation().getPath().endsWith("/" + threadLocalInt));
 
         String body = response.readEntity(String.class);
 
