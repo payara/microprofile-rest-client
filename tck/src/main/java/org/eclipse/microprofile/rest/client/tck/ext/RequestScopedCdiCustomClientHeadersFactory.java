@@ -15,17 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.eclipse.microprofile.rest.client.tck.ext;
 
-import javax.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
+
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
-
-@ApplicationScoped
-public class CdiCustomClientHeadersFactory implements ClientHeadersFactory {
+@RequestScoped
+public class RequestScopedCdiCustomClientHeadersFactory implements ClientHeadersFactory {
 
     public static MultivaluedMap<String, String> passedInOutgoingHeaders = new MultivaluedHashMap<>();
     public static boolean isIncomingHeadersMapNull;
@@ -33,10 +34,10 @@ public class CdiCustomClientHeadersFactory implements ClientHeadersFactory {
     public static boolean invoked;
 
     @Inject
-    private Counter counter;
+    private RequestScopedCounter counter;
 
     public MultivaluedMap<String, String> update(MultivaluedMap<String, String> incomingHeaders,
-                                                 MultivaluedMap<String, String> clientOutgoingHeaders) {
+        MultivaluedMap<String, String> clientOutgoingHeaders) {
         invoked = true;
         isIncomingHeadersMapNull = incomingHeaders == null;
         isOutgoingHeadersMapNull = clientOutgoingHeaders == null;
