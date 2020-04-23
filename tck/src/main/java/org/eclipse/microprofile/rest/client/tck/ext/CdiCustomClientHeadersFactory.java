@@ -24,24 +24,24 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 @ApplicationScoped
 public class CdiCustomClientHeadersFactory implements ClientHeadersFactory {
 
-    public static MultivaluedMap<String, String> passedInOutgoingHeaders = new MultivaluedHashMap<>();
-    public static boolean isIncomingHeadersMapNull;
-    public static boolean isOutgoingHeadersMapNull;
-    public static boolean invoked;
+    public static AtomicReference<ClientHeadersFactoryState> state = new AtomicReference(new ClientHeadersFactoryState());
 
     @Inject
     private Counter counter;
 
     public MultivaluedMap<String, String> update(MultivaluedMap<String, String> incomingHeaders,
                                                  MultivaluedMap<String, String> clientOutgoingHeaders) {
-        invoked = true;
-        isIncomingHeadersMapNull = incomingHeaders == null;
-        isOutgoingHeadersMapNull = clientOutgoingHeaders == null;
-        if (!isOutgoingHeadersMapNull) {
-            passedInOutgoingHeaders.putAll(clientOutgoingHeaders);
+        state.get().setInvoked(true);
+        state.get().setIsIncomingHeadersMapNull(incomingHeaders == null);
+        state.get().setIsOutgoingHeadersMapNull(clientOutgoingHeaders == null);
+
+        if (state.get().getPassedInOutgoingHeaders() != null) {
+            state.get().getPassedInOutgoingHeaders().putAll(clientOutgoingHeaders);
         }
 
         MultivaluedMap<String, String> returnVal = new MultivaluedHashMap<>();
