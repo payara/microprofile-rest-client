@@ -15,27 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.eclipse.microprofile.rest.client.tck.ext;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
+package org.eclipse.microprofile.rest.client.tck.ext;
 
 import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
 
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-@ApplicationScoped
-public class CdiCustomClientHeadersFactory implements ClientHeadersFactory {
+@RequestScoped
+public class RequestScopedCdiCustomClientHeadersFactory implements ClientHeadersFactory {
 
     public static AtomicReference<ClientHeadersFactoryState> state = new AtomicReference(new ClientHeadersFactoryState());
 
     @Inject
-    private Counter counter;
+    private RequestScopedCounter counter;
 
     public MultivaluedMap<String, String> update(MultivaluedMap<String, String> incomingHeaders,
-                                                 MultivaluedMap<String, String> clientOutgoingHeaders) {
+            MultivaluedMap<String, String> clientOutgoingHeaders) {
         state.get().setInvoked(true);
         state.get().setIsIncomingHeadersMapNull(incomingHeaders == null);
         state.get().setIsOutgoingHeadersMapNull(clientOutgoingHeaders == null);

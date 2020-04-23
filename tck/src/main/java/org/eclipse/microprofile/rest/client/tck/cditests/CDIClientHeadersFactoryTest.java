@@ -27,9 +27,13 @@ import java.net.URI;
 import javax.json.JsonObject;
 
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
+import org.eclipse.microprofile.rest.client.tck.ext.RequestScopedCdiCustomClientHeadersFactory;
+import org.eclipse.microprofile.rest.client.tck.ext.RequestScopedCounter;
+import org.eclipse.microprofile.rest.client.tck.ext.ClientHeadersFactoryState;
 import org.eclipse.microprofile.rest.client.tck.interfaces.CdiClientHeadersFactoryClient;
 import org.eclipse.microprofile.rest.client.tck.ext.CdiCustomClientHeadersFactory;
 import org.eclipse.microprofile.rest.client.tck.ext.Counter;
+import org.eclipse.microprofile.rest.client.tck.interfaces.RequestScopedCdiClientHeadersFactoryClient;
 import org.eclipse.microprofile.rest.client.tck.providers.ReturnWithAllClientHeadersFilter;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
@@ -46,7 +50,11 @@ public class CDIClientHeadersFactoryTest extends Arquillian {
             .addClasses(CdiClientHeadersFactoryClient.class,
                 CdiCustomClientHeadersFactory.class,
                 Counter.class,
-                ReturnWithAllClientHeadersFilter.class)
+                ReturnWithAllClientHeadersFilter.class,
+                RequestScopedCdiClientHeadersFactoryClient.class,
+                RequestScopedCdiCustomClientHeadersFactory.class,
+                RequestScopedCounter.class,
+                ClientHeadersFactoryState.class)
             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
@@ -64,27 +72,70 @@ public class CDIClientHeadersFactoryTest extends Arquillian {
         }
     }
 
+    private static RequestScopedCdiClientHeadersFactoryClient requestScopedClient(Class<?>... providers) {
+        try {
+            RestClientBuilder builder = RestClientBuilder.newBuilder().baseUri(URI.create("http://localhost:9080/notused"));
+            for (Class<?> provider : providers) {
+                builder.register(provider);
+            }
+            return builder.build(RequestScopedCdiClientHeadersFactoryClient.class);
+        }
+        catch (Throwable t) {
+            t.printStackTrace();
+            return null;
+        }
+    }
+
     @Test
     public void testClientHeadersFactoryInvoked() {
-        CdiCustomClientHeadersFactory.isIncomingHeadersMapNull = true;
-        CdiCustomClientHeadersFactory.isOutgoingHeadersMapNull = true;
-        CdiCustomClientHeadersFactory.passedInOutgoingHeaders.clear();
+        ClientHeadersFactoryState state = CdiCustomClientHeadersFactory.state.get();
+        state.setIsIncomingHeadersMapNull(true);
+        state.setIsOutgoingHeadersMapNull(true);
+        state.getPassedInOutgoingHeaders().clear();
 
         JsonObject headers = client(ReturnWithAllClientHeadersFilter.class).delete("argValue");
 
-        assertTrue(CdiCustomClientHeadersFactory.invoked);
-        assertFalse(CdiCustomClientHeadersFactory.isIncomingHeadersMapNull);
-        assertFalse(CdiCustomClientHeadersFactory.isOutgoingHeadersMapNull);
-        assertEquals(CdiCustomClientHeadersFactory.passedInOutgoingHeaders.getFirst("IntfHeader"), "intfValue");
-        assertEquals(CdiCustomClientHeadersFactory.passedInOutgoingHeaders.getFirst("MethodHeader"), "methodValue");
-        assertEquals(CdiCustomClientHeadersFactory.passedInOutgoingHeaders.getFirst("ArgHeader"), "argValue");
+        assertHeadersState(CdiCustomClientHeadersFactory.state.get(), headers);
+        assertEquals(Counter.COUNT.get(), 1);
+    }
 
+    @Test(dependsOnMethods = "testClientHeadersFactoryInvoked")
+    public void testApplicationScope() {
+        JsonObject headers = client(ReturnWithAllClientHeadersFilter.class).delete("argValue");
+        assertEquals(headers.getString("CDI_INJECT_COUNT"), "2");
+        assertEquals(Counter.COUNT.get(), 2);
+    }
+
+    @Test
+    public void testRequestScopeClientHeadersFactoryInvoked() {
+        ClientHeadersFactoryState state = RequestScopedCdiCustomClientHeadersFactory.state.get();
+        state.setIsIncomingHeadersMapNull(true);
+        state.setIsOutgoingHeadersMapNull(true);
+        state.getPassedInOutgoingHeaders().clear();
+
+        JsonObject headers = requestScopedClient(ReturnWithAllClientHeadersFilter.class).delete("argValue");
+
+        assertHeadersState(RequestScopedCdiCustomClientHeadersFactory.state.get(), headers);
+    }
+
+    @Test(dependsOnMethods = "testRequestScopeClientHeadersFactoryInvoked")
+    public void testRequestScope() {
+        JsonObject headers = requestScopedClient(ReturnWithAllClientHeadersFilter.class).delete("argValue");
+        assertEquals(headers.getString("CDI_INJECT_COUNT"), "1");
+    }
+
+    private void assertHeadersState(ClientHeadersFactoryState state, JsonObject headers) {
+        assertTrue(state.isInvoked());
+        assertFalse(state.isIncomingHeadersMapNull());
+        assertFalse(state.isOutgoingHeadersMapNull());
+        assertEquals(state.getPassedInOutgoingHeaders().getFirst("IntfHeader"), "intfValue");
+        assertEquals(state.getPassedInOutgoingHeaders().getFirst("MethodHeader"), "methodValue");
+        assertEquals(state.getPassedInOutgoingHeaders().getFirst("ArgHeader"), "argValue");
 
         assertEquals(headers.getString("IntfHeader"), "intfValueModified");
         assertEquals(headers.getString("MethodHeader"), "methodValueModified");
         assertEquals(headers.getString("ArgHeader"), "argValueModified");
         assertEquals(headers.getString("FactoryHeader"), "factoryValue");
         assertEquals(headers.getString("CDI_INJECT_COUNT"), "1");
-        assertEquals(Counter.COUNT.get(), 1);
     }
 }
