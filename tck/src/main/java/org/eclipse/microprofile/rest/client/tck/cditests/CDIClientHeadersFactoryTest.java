@@ -47,15 +47,15 @@ public class CDIClientHeadersFactoryTest extends Arquillian {
     @Deployment
     public static Archive<?> createDeployment() {
         return ShrinkWrap.create(WebArchive.class, CDIClientHeadersFactoryTest.class.getSimpleName()+".war")
-            .addClasses(CdiClientHeadersFactoryClient.class,
-                CdiCustomClientHeadersFactory.class,
-                Counter.class,
-                ReturnWithAllClientHeadersFilter.class,
-                RequestScopedCdiClientHeadersFactoryClient.class,
-                RequestScopedCdiCustomClientHeadersFactory.class,
-                RequestScopedCounter.class,
-                ClientHeadersFactoryState.class)
-            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                .addClasses(CdiClientHeadersFactoryClient.class,
+                        CdiCustomClientHeadersFactory.class,
+                        Counter.class,
+                        ReturnWithAllClientHeadersFilter.class,
+                        RequestScopedCdiClientHeadersFactoryClient.class,
+                        RequestScopedCdiCustomClientHeadersFactory.class,
+                        RequestScopedCounter.class,
+                        ClientHeadersFactoryState.class)
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
     private static CdiClientHeadersFactoryClient client(Class<?>... providers) {
@@ -86,7 +86,7 @@ public class CDIClientHeadersFactoryTest extends Arquillian {
         }
     }
 
-    @Test
+    @Test(priority = 1)
     public void testClientHeadersFactoryInvoked() {
         ClientHeadersFactoryState state = CdiCustomClientHeadersFactory.state.get();
         state.setIsIncomingHeadersMapNull(true);
@@ -99,14 +99,14 @@ public class CDIClientHeadersFactoryTest extends Arquillian {
         assertEquals(Counter.COUNT.get(), 1);
     }
 
-    @Test(dependsOnMethods = "testClientHeadersFactoryInvoked")
+    @Test(priority = 2)
     public void testApplicationScope() {
         JsonObject headers = client(ReturnWithAllClientHeadersFilter.class).delete("argValue");
         assertEquals(headers.getString("CDI_INJECT_COUNT"), "2");
         assertEquals(Counter.COUNT.get(), 2);
     }
 
-    @Test
+    @Test(priority = 3)
     public void testRequestScopeClientHeadersFactoryInvoked() {
         ClientHeadersFactoryState state = RequestScopedCdiCustomClientHeadersFactory.state.get();
         state.setIsIncomingHeadersMapNull(true);
@@ -118,7 +118,7 @@ public class CDIClientHeadersFactoryTest extends Arquillian {
         assertHeadersState(RequestScopedCdiCustomClientHeadersFactory.state.get(), headers);
     }
 
-    @Test(dependsOnMethods = "testRequestScopeClientHeadersFactoryInvoked")
+    @Test(priority = 4)
     public void testRequestScope() {
         JsonObject headers = requestScopedClient(ReturnWithAllClientHeadersFilter.class).delete("argValue");
         assertEquals(headers.getString("CDI_INJECT_COUNT"), "1");
